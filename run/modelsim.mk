@@ -10,8 +10,8 @@ MODELSIM_LIB_NAME := work
 # constants
 
 
-modelsim_compile_files := $(UVM_HOME)/src/uvm_pkg.sv $(UVM_HOME)/src/dpi/uvm_dpi.cc $(compile_files) 
-modelsim_compile_opts  := $(compile_opts) +incdir+$(UVM_HOME)/src +define+CL_USE_MODELSIM -ccflags "-DQUESTA"
+modelsim_compile_files := $(compile_files) 
+modelsim_compile_opts  := $(compile_opts) +define+CL_USE_MODELSIM -ccflags "-DQUESTA"
 modelsim_run_opts      := $(run_opts)
 modelsim_run_cmd_file  := modelsim.cmd
 
@@ -20,12 +20,16 @@ modelsim_run_cmd_file  := modelsim.cmd
 modelsim: prep_modelsim run_modelsim
 
 prep_modelsim:
-	vlib $(MODELSIM_LIB_DIR)
-	vmap $(MODELSIM_LIB_NAME) $(MODELSIM_LIB_DIR)
+	echo ## >run.do
+	echo if [file exists "work"] {vdel -all} >> run.do
+	echo vlib $(MODELSIM_LIB_DIR) >> run.do
+	echo vmap $(MODELSIM_LIB_NAME) $(MODELSIM_LIB_DIR) >> run.do
 
 run_modelsim:
-	vlog $(modelsim_compile_opts) $(modelsim_compile_files)
-	vsim $(modelsim_run_opts) $(top_module) < $(modelsim_run_cmd_file)
+	echo vlog $(modelsim_compile_opts) $(modelsim_compile_files) >> run.do
+	echo vopt top -o top_optimized +acc >> run.do
+	echo vsim top_optimized $(modelsim_run_opts) -do modelsim.cmd >> run.do
+	vsim -c -do run.do
 
 clean_modelsim:
 	vdel -lib $(MODELSIM_LIB_NAME) -all
